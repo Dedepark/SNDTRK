@@ -1,14 +1,14 @@
-package com.sndtrk.app; // Pastikan ini sama dengan folder kamu
+package com.sndtrk.app;
 
 import android.os.Bundle;
 import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 
-@Override
-public void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    // Baris ini opsional, biasanya sync sudah otomatis mendaftarkan plugin
-}
+public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
 
     @Override
     public void onResume() {
