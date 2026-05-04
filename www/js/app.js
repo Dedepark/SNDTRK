@@ -16,6 +16,38 @@ import {
 } from './ui.js';
 import { initSettings } from './settings.js';
 
+// Tambahkan import jika perlu, atau pakai window.Capacitor
+async function requestPermissions() {
+  if (window.Capacitor) {
+    // 1. Minta Izin Notifikasi (Android 13+)
+    const notification = window.Capacitor.Plugins.LocalNotifications;
+    if (notification) {
+      await notification.requestPermissions();
+    }
+
+    // 2. Aktifkan Background Mode
+    // Plugin ini biasanya nempel di window.BackgroundMode atau lewat Plugins
+    const bgMode = window.BackgroundMode; 
+    if (bgMode) {
+      bgMode.enable();
+      // Biar makin sakti, kasih tau Android jangan pelit baterai
+      bgMode.overrideBackButton();
+      bgMode.setDefaults({
+        title: 'SNDTRK Active',
+        text: 'Playing music in background',
+        icon: 'ic_launcher', // pakai icon bawaan app
+        color: '1db954', // warna ijo khas SNDTRK
+        resume: true,
+        hidden: false
+      });
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  requestPermissions();
+});
+
 // ══ App State ════════════════════════════════
 let songs      = [];
 let _curIdx    = -1;
