@@ -10,7 +10,7 @@ jobs:
     name: Build APK
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Wajib agar GitHub Actions diizinkan bikin Release
+      contents: write
 
     steps:
       - name: Checkout Source Code
@@ -30,23 +30,28 @@ jobs:
       - name: Install NPM Dependencies
         run: npm install
 
-      - name: Add Android Platform & Sync
+      # Nggak perlu "cap add android" lagi karena foldernya udah kamu push
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      # Ini trik sakti buat benerin error 127 (format Windows vs Linux)
+      - name: Fix Gradle Permissions & Line Endings
+        working-directory: ./android
         run: |
-          npx cap add android
-          npx cap sync android
+          sed -i 's/\r$//' gradlew
+          chmod +x gradlew
 
       - name: Build APK (Debug)
         working-directory: ./android
         run: ./gradlew assembleDebug
 
-# Tambahkan step ini untuk ganti nama file
       - name: Rename APK
         run: mv android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/SNDTRK.apk
 
       - name: Upload to GitHub Releases
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "android/app/build/outputs/apk/debug/SNDTRK.apk" # Path diubah ke SNDTRK.apk
+          artifacts: "android/app/build/outputs/apk/debug/SNDTRK.apk"
           tag: "latest"
           name: "SNDTRK Latest APK"
           allowUpdates: true
