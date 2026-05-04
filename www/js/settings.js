@@ -184,7 +184,6 @@ const THEMES = {
 
 // ── State ─────────────────────────────────────
 let currentTheme = localStorage.getItem('sndtrk-theme') || 'darkmorphism';
-let deferredInstallPrompt = null;
 let crossfadeEnabled = localStorage.getItem('sndtrk-crossfade') === 'true';
 let crossfadeDuration = parseInt(localStorage.getItem('sndtrk-crossfade-dur') || '3');
 let normalizationEnabled = localStorage.getItem('sndtrk-normalize') === 'true';
@@ -246,27 +245,6 @@ export function initSettings() {
   applyTheme(currentTheme);
   if (accentColor) applyAccent(accentColor);
 
-  // Capture PWA install prompt
-  window.addEventListener('beforeinstallprompt', e => {
-    e.preventDefault();
-    deferredInstallPrompt = e;
-    // Update install button if settings view is open
-    const btn = document.getElementById('btn-install-pwa');
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = 'Install App';
-    }
-  });
-
-  window.addEventListener('appinstalled', () => {
-    deferredInstallPrompt = null;
-    const btn = document.getElementById('btn-install-pwa');
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = '✓ Already Installed';
-    }
-  });
-
   renderSettingsView();
   wireSettingsEvents();
 }
@@ -275,9 +253,6 @@ export function initSettings() {
 function renderSettingsView() {
   const view = document.getElementById('view-settings');
   if (!view) return;
-
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-    || window.navigator.standalone;
 
   view.innerHTML = `
     <!-- Mini player bar (same as library) -->
@@ -307,18 +282,17 @@ function renderSettingsView() {
         <div class="settings-sub">Customize SNDTRK</div>
       </div>
 
-      <!-- PWA Install -->
+      <!-- App Download -->
       <div class="settings-section">
         <div class="settings-section-label">APPLICATION</div>
         <div class="settings-card">
           <div class="settings-row">
             <div class="settings-row-info">
               <div class="settings-row-title">Install App</div>
-              <div class="settings-row-desc">Add SNDTRK to your home screen for offline use</div>
+              <div class="settings-row-desc">Download SNDTRK APK for Android</div>
             </div>
-            <button class="settings-action-btn" id="btn-install-pwa"
-              ${isStandalone ? 'disabled' : ''}>
-              ${isStandalone ? '✓ Installed' : 'Install'}
+            <button class="settings-action-btn" id="btn-install-pwa">
+              Download APK
             </button>
           </div>
           <div class="settings-divider"></div>
@@ -533,21 +507,24 @@ function wireSettingsEvents() {
       });
     }
 
-    // Install PWA
+    // Install APK Android
     if (e.target.id === 'btn-install-pwa') {
-      if (deferredInstallPrompt) {
-        deferredInstallPrompt.prompt();
-        deferredInstallPrompt.userChoice.then(result => {
-          if (result.outcome === 'accepted') {
-            deferredInstallPrompt = null;
-          }
-        });
-      } else {
-        // Show install instructions toast
-        import('./ui.js').then(({ toast }) => {
-          toast('Use browser menu → "Add to Home Screen"');
-        });
-      }
+      // Buat link download palsu
+      const a = document.createElement('a');
+      a.href = './SNDTRK.apk'; // Pastikan nama file sama persis
+      a.download = 'SNDTRK.apk';
+      document.body.appendChild(a);
+      
+      // Klik link tersebut secara otomatis
+      a.click();
+      
+      // Bersihkan sisa link
+      document.body.removeChild(a);
+
+      // Tampilkan toast
+      import('./ui.js').then(({ toast }) => {
+        toast('Mendownload APK SNDTRK...');
+      });
     }
 
     // Clear library
