@@ -1,0 +1,6 @@
+{
+  "appId": "com.sndtrk.app",
+  "appName": "SNDTRK",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
