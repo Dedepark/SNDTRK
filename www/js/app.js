@@ -7,7 +7,7 @@ import { openDB, dbAdd, dbAll, dbDel } from './db.js';
 import {
   init as initAudio, initCtx, loadAndPlay, togglePlay, stopPlayback,
   setCurIdx, setPlaying, bindMediaSessionHandlers,
-  getCurAudio, playing, curIdx, analyser, gainNode, bassF, trebleF
+  getCurAudio, playing, curIdx, analyser, gainNode, bassF, trebleF, audioCtx
 } from './audio.js';
 import { setupVisualizer, startVis, stopVis, resizeCanvas, resumeVis, updateAnalyser } from './visualizer.js';
 import {
@@ -16,7 +16,7 @@ import {
 } from './ui.js';
 import { initSettings } from './settings.js';
 
-// Tambahkan import jika perlu, atau pakai window.Capacitor
+// Fungsi Izin dan Background Mode
 async function requestPermissions() {
   if (window.Capacitor) {
     // 1. Izin Notifikasi
@@ -29,13 +29,34 @@ async function requestPermissions() {
     if (window.cordova && window.cordova.plugins && window.cordova.plugins.backgroundMode) {
       const bg = window.cordova.plugins.backgroundMode;
       bg.enable();
+      
       bg.on('activate', () => {
          bg.disableWebViewOptimizations(); 
+         bg.disableBatteryOptimizations();
       });
-      console.log("Background Mode Enabled");
+
+      bg.setDefaults({
+        title: 'SNDTRK is Playing',
+        text: 'Music continues in background',
+        icon: 'ic_launcher', 
+        color: '1db954',
+        resume: true,
+        hidden: false
+      });
+      
+      console.log("Background Mode Configured");
     }
   }
 }
+
+// Pantau visibilitas untuk resume audio
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
   requestPermissions();
@@ -86,8 +107,6 @@ async function playSong(idx) {
     const audio = await loadAndPlay(s, idx);
     syncPlaying(true);
 
-    // Re-wire analyser after every loadAndPlay (new MediaElementSourceNode each time)
-    // Import analyser fresh from audio module
     const { analyser: freshAnalyser } = await import('./audio.js');
     updateAnalyser(freshAnalyser);
     setupVisualizer(DOM.canvas, DOM.artWrap, freshAnalyser);
@@ -109,6 +128,7 @@ async function playSong(idx) {
 }
 
 function handleTogglePlay() {
+  initCtx(); // Pastikan context aktif
   if (!getCurAudio()) {
     if (songs.length) playSong(0);
     return;
@@ -235,7 +255,6 @@ function getAudioDuration(file) {
 
 // ══ Event Wiring ═════════════════════════════
 function wireEvents() {
-  // Player controls
   DOM.progBar.addEventListener('mousedown', e => {
     dragging = true; DOM.progBar.classList.add('dragging'); seekTo(e.clientX);
   });
@@ -264,12 +283,10 @@ function wireEvents() {
     btn.title = ['Repeat: Off', 'Repeat: All', 'Repeat: One'][repeatMode];
   });
 
-  // Mini player
   DOM.miniPlay.addEventListener('click', e => { e.stopPropagation(); handleTogglePlay(); });
   DOM.miniNext.addEventListener('click', e => { e.stopPropagation(); skipNext(); });
   DOM.miniPlayer.addEventListener('click', () => showView('view-player'));
 
-  // Library
   document.getElementById('btn-add').addEventListener('click', () => {
     document.getElementById('file-input').click();
   });
@@ -278,13 +295,11 @@ function wireEvents() {
     if (files.length) { importFiles(files); e.target.value = ''; }
   });
 
-  // Bottom nav — fix: resume visualizer when returning to player view
   DOM.navBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const target = btn.dataset.target;
       showView(target);
       if (target === 'view-player') {
-        // Give DOM a tick to show the canvas before resizing
         requestAnimationFrame(() => {
           resumeVis();
         });
@@ -292,7 +307,6 @@ function wireEvents() {
     });
   });
 
-  // EQ + Volume
   DOM.eqB.addEventListener('input', () => {
     const v = parseFloat(DOM.eqB.value);
     if (bassF) bassF.gain.value = v;
@@ -318,19 +332,17 @@ function wireEvents() {
     toast('EQ reset ✓');
   });
 
-  // Canvas resize on orientation/resize
   window.addEventListener('resize', () => {
-    if (_playing) {
+    if (playing) {
       requestAnimationFrame(() => resumeVis());
     } else {
       resizeCanvas();
     }
   });
 
-  // Media Session
   bindMediaSessionHandlers({
-    onPlay:  () => { if (!_playing) handleTogglePlay(); },
-    onPause: () => { if (_playing)  handleTogglePlay(); },
+    onPlay:  () => { if (!playing) handleTogglePlay(); },
+    onPause: () => { if (playing)  handleTogglePlay(); },
     onNext:  () => skipNext(),
     onPrev:  () => skipPrev(),
   });
@@ -353,14 +365,10 @@ async function init() {
   updateEqDisplay(0, 0, 1);
 
   if (songs.length) setTrackMeta(songs[0]);
-
-  // Init settings page
   initSettings();
-
   wireEvents();
 }
 
-// Wire analyser after first AudioContext creation
 document.addEventListener('click', function hookAnalyser() {
   setTimeout(() => {
     if (analyser) {
@@ -373,7 +381,6 @@ document.addEventListener('click', function hookAnalyser() {
 
 init().catch(console.error);
 
-// PWA Service Worker
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }

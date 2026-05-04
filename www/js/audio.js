@@ -35,7 +35,11 @@ export function init({ onTick, onEnded, onPlayUI, songs }) {
 
 /** Create AudioContext + DSP chain (call on first user gesture) */
 export function initCtx() {
-  if (audioCtx) return;
+  if (audioCtx) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return;
+  }
+  
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
   bassF = audioCtx.createBiquadFilter();
