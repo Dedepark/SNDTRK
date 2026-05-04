@@ -9,6 +9,8 @@ jobs:
   build:
     name: Build APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Wajib agar GitHub Actions diizinkan bikin Release
 
     steps:
       - name: Checkout Source Code
@@ -37,8 +39,13 @@ jobs:
         working-directory: ./android
         run: ./gradlew assembleDebug
 
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
+      # Bagian ini yang diubah: Otomatis bikin rilis publik
+      - name: Upload to GitHub Releases
+        uses: ncipollo/release-action@v1
         with:
-          name: SNDTRK-App
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          artifacts: "android/app/build/outputs/apk/debug/app-debug.apk"
+          tag: "latest"
+          name: "SNDTRK Latest APK"
+          allowUpdates: true
+          makeLatest: true
+          token: ${{ secrets.GITHUB_TOKEN }}

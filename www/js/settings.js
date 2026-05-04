@@ -507,23 +507,14 @@ function wireSettingsEvents() {
       });
     }
 
-    // Install APK Android
+// Install APK Android
     if (e.target.id === 'btn-install-pwa') {
-      // Buat link download palsu
-      const a = document.createElement('a');
-      a.href = './SNDTRK.apk'; // Pastikan nama file sama persis
-      a.download = 'SNDTRK.apk';
-      document.body.appendChild(a);
-      
-      // Klik link tersebut secara otomatis
-      a.click();
-      
-      // Bersihkan sisa link
-      document.body.removeChild(a);
+      // Langsung arahkan browser buat download dari GitHub Release terbaru
+      window.location.href = 'https://github.com/Dedepark/SNDTRK/releases/latest/download/app-debug.apk';
 
       // Tampilkan toast
       import('./ui.js').then(({ toast }) => {
-        toast('Mendownload APK SNDTRK...');
+        toast('Mendownload dari GitHub...');
       });
     }
 
