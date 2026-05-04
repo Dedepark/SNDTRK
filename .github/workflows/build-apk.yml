@@ -39,11 +39,14 @@ jobs:
         working-directory: ./android
         run: ./gradlew assembleDebug
 
-      # Bagian ini yang diubah: Otomatis bikin rilis publik
+# Tambahkan step ini untuk ganti nama file
+      - name: Rename APK
+        run: mv android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/SNDTRK.apk
+
       - name: Upload to GitHub Releases
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "android/app/build/outputs/apk/debug/app-debug.apk"
+          artifacts: "android/app/build/outputs/apk/debug/SNDTRK.apk" # Path diubah ke SNDTRK.apk
           tag: "latest"
           name: "SNDTRK Latest APK"
           allowUpdates: true

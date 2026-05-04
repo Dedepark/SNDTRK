@@ -509,10 +509,9 @@ function wireSettingsEvents() {
 
 // Install APK Android
     if (e.target.id === 'btn-install-pwa') {
-      // Langsung arahkan browser buat download dari GitHub Release terbaru
-      window.location.href = 'https://github.com/Dedepark/SNDTRK/releases/latest/download/app-debug.apk';
+      // Ujung link diubah jadi SNDTRK.apk
+      window.location.href = 'https://github.com/Dedepark/SNDTRK/releases/latest/download/SNDTRK.apk';
 
-      // Tampilkan toast
       import('./ui.js').then(({ toast }) => {
         toast('Mendownload dari GitHub...');
       });
