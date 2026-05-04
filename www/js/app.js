@@ -19,32 +19,28 @@ import { initSettings } from './settings.js';
 // Fungsi Izin dan Background Mode
 async function requestPermissions() {
   if (window.Capacitor) {
-    // 1. Izin Notifikasi
     const notification = window.Capacitor.Plugins.LocalNotifications;
-    if (notification) {
-      await notification.requestPermissions();
-    }
+    if (notification) await notification.requestPermissions();
 
-    // 2. Aktifkan Background Mode (Cara Cordova)
     if (window.cordova && window.cordova.plugins && window.cordova.plugins.backgroundMode) {
       const bg = window.cordova.plugins.backgroundMode;
       bg.enable();
       
-      bg.on('activate', () => {
-         bg.disableWebViewOptimizations(); 
-         bg.disableBatteryOptimizations();
-      });
-
+      // Memberitahu sistem bahwa ini adalah aplikasi multimedia
       bg.setDefaults({
-        title: 'SNDTRK is Playing',
-        text: 'Music continues in background',
-        icon: 'ic_launcher', 
+        title: 'SNDTRK is active',
+        text: 'Playing your soundtrack...',
+        icon: 'ic_launcher',
         color: '1db954',
         resume: true,
-        hidden: false
+        hidden: false,
+        bigText: true
       });
-      
-      console.log("Background Mode Configured");
+
+      bg.on('activate', () => {
+         bg.disableWebViewOptimizations();
+         bg.disableBatteryOptimizations();
+      });
     }
   }
 }
